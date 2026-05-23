@@ -1,6 +1,6 @@
 ---
 name: bug-hunt
-description: Systematic root-cause debugging for software bugs (frontend, backend, mobile). Use when the user reports a symptom that needs investigation — "卡死 / loading / 报错 / 数据不对 / 行为异常 / 复现了 bug / 帮我查一下为什么 X 不工作 / 排查一下 / debug this / why is X broken / hunt the bug / investigate". Walks through five phases — reproduce → top-down localize → full-chain instrumentation → layered root cause → surgical fix + bug report. Distinct from generic `hunt` / `investigate` by enforcing multi-layered cause chains, structured log discipline (unique prefix + JSON.stringify), and a required bug-report artifact in `docs/`. Anti-patterns: do NOT guess a fix without evidence, do NOT bypass with try/catch, do NOT delete unfamiliar state.
+description: 'Systematic root-cause debugging for software bugs (frontend, backend, mobile). Use when the user reports a symptom that needs investigation — "卡死 / loading / 报错 / 数据不对 / 行为异常 / 复现了 bug / 帮我查一下为什么 X 不工作 / 排查一下 / debug this / why is X broken / hunt the bug / investigate". Walks through five phases — reproduce → top-down localize → full-chain instrumentation → layered root cause → surgical fix + bug report. Distinct from generic `hunt` / `investigate` by enforcing multi-layered cause chains, structured log discipline (unique prefix + JSON.stringify), and a required bug-report artifact in `docs/`. Anti-patterns: do NOT guess a fix without evidence, do NOT bypass with try/catch, do NOT delete unfamiliar state.'
 ---
 
 # bug-hunt — Methodology-driven Root-Cause Investigation
