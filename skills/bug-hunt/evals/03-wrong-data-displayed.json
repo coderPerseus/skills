@@ -1,0 +1,14 @@
+{
+  "skills": ["bug-hunt"],
+  "query": "估值页面的中位播放量显示成 30,但是这个博主明明每条视频都有几万播放。修了一次 spinner 已经不转了,但是数字还是不对。继续帮我查到根因然后写个 bug 报告。",
+  "files": [],
+  "expected_behavior": [
+    "Invokes the bug-hunt skill and recognizes from 'spinner 已经不转了 but 数字还是不对' that the previous fix was a PROXIMATE cause only — explicitly returns to Phase 1/3 rather than declaring victory.",
+    "Phase 3: produces a multi-layer cause chain (at least 2 levels, ideally 3) using indent-style or arrow notation, not a single 'the bug is X' statement. Each level names a concrete artifact (a function, a field, a parser).",
+    "Phase 3: each link in the chain is paired with the kind of evidence that would confirm it (a log line, a type definition, a sample payload) — does not accept 'probably' as proof.",
+    "Phase 4: the proposed fix is the smallest diff that addresses the deepest proven cause; does NOT refactor neighboring code, rename variables, or add unrelated improvements.",
+    "Phase 4: verification plan re-runs the repro with the Phase 2 logs still in place and confirms the sentinel value flips to the expected magnitude (not just non-zero).",
+    "Phase 5: produces — or commits to producing — a markdown bug report at docs/bugfix-<slug>.md that includes symptom, the multi-layer root cause chain, investigation evidence, fix diff, before/after verification table, and follow-up suggestions.",
+    "Phase 5: explicitly plans the log cleanup step (grep for the unique prefix, expect 0 hits) and does not leave debug logs in the final diff."
+  ]
+}

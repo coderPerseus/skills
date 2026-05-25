@@ -1,0 +1,14 @@
+{
+  "skills": ["bug-hunt"],
+  "query": "我们的预估报价页面打开后一直转圈,spinner 不消失。重现路径:登录后访问 /estimate?platform=youtube&handle=mkbhd ,等 5 秒以上 spinner 还在。麻烦帮我排查一下为什么 X 不工作。",
+  "files": [],
+  "expected_behavior": [
+    "Invokes the bug-hunt skill (does not jump straight to a guessed fix).",
+    "Phase 0: asks for or restates a deterministic repro, AND defines a measurable success criterion that is stronger than 'spinner gone' (e.g. spinner gone AND a numeric value rendered > 0).",
+    "Phase 1: produces a layer table mapping the visible spinner condition up through prop/state/atom writers to the upstream data source, with file:line slots even if filenames are placeholders.",
+    "Phase 1 ends with at least one NAMED hypothesis (e.g. 'getYoutubeData returns empty videos' or 'medianViews === 0 because parsing drops K suffix'), not a vague 'something upstream'.",
+    "Phase 2: proposes adding logs with ONE unique greppable prefix (e.g. [DEBUG_<SOMETHING>]) reused across every layer, payloads wrapped with JSON.stringify(obj, null, 2), and a sentinel field summarizing the loading decision.",
+    "Phase 2 ends with an explicit ask for the user to reproduce and paste the console output back — does NOT continue inventing fixes before evidence arrives.",
+    "Does NOT propose any of: bumping a timeout, adding a retry, setting a default value, wrapping in try/catch and returning early, or otherwise masking the symptom."
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "skills": ["bug-hunt"],
+  "query": "Our Node/Express endpoint POST /api/orders started returning 500 with an empty JSON body in production. No stack trace shows up in our logs. It worked yesterday. Hunt the bug.",
+  "files": [],
+  "expected_behavior": [
+    "Invokes the bug-hunt skill rather than guessing a fix from the symptom.",
+    "Phase 0: asks for or recovers the exact repro (sample request body, auth state, env), AND defines a success criterion phrased in terms of a verifiable response (e.g. '2xx response AND order row persisted AND no error in structured log').",
+    "Phase 0/1: asks for or proposes a git-log / diff comparison since 'yesterday' to scope the regression, instead of treating it as a brand-new bug of unknown age.",
+    "Phase 2: proposes installing a global rejection hook (e.g. process.on('unhandledRejection') and process.on('uncaughtException')) so silent throws surface, plus structured logs at the handler entry, around any await, and around any try/catch boundary, all with one unique prefix.",
+    "Phase 2: error payloads are logged as { message, stack, raw: String(err) } — explicitly NOT raw JSON.stringify(err) (which would print '{}').",
+    "Phase 2 ends with an explicit ask for the user to reproduce and paste the prefixed log lines before any fix is written.",
+    "Does NOT propose wrapping the handler in try/catch to 'log and return 500 gracefully' as the fix — recognizes that swallowing the next throw is a Hard-Rule violation."
+  ]
+}

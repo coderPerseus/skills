@@ -184,6 +184,47 @@ For each link in the chain, you must have evidence:
 
 **Don't accept "probably" as evidence.** Confirm via grep, type inspection, or a one-off test call.
 
+### 3.4 Source hierarchy for external evidence
+
+When a link in the cause chain requires external knowledge — "did this library change behavior?", "what does this API actually return?", "is this a known framework quirk?" — the *quality of your source* directly determines the quality of your root cause. Follow this order strictly:
+
+**Tier 1 — Official documentation & first-party source (always check first):**
+
+- Official documentation site (e.g., `react.dev`, `nodejs.org/api`, `developer.mozilla.org`, `kubernetes.io/docs`).
+- The library's own source code on GitHub / GitLab (read the actual function, not a blog summary of it).
+- Official changelog / release notes / migration guide.
+- The package's own type definitions (`.d.ts`, `.pyi`).
+- Official spec / RFC (e.g., `tc39.es`, `httpwg.org`, `w3.org`).
+
+**Tier 2 — Maintainer-hosted GitHub issues & discussions (the second priority source):**
+
+- Closed issues on the *maintainer's own* repo, especially ones linked to a commit / PR — these often contain the canonical explanation of a bug or behavior change.
+- Open discussions / RFC issues for "this changed in v3, why?" style questions.
+- Pull request descriptions and review comments for *why* a change was made.
+
+Tier 1 and Tier 2 together are the only sources you should treat as load-bearing for a root-cause claim. If they answer the question, **stop**. Do not "double-check" against a blog.
+
+**Tier 3 — Fallback (only when Tier 1 and Tier 2 are silent):**
+
+- Engineering blog posts from the library author or platform vendor (e.g., Vercel engineering blog for Next.js internals).
+- Stack Overflow answers that are either (a) accepted with high vote count AND cite Tier 1/2 sources, or (b) authored by a recognized maintainer of the project.
+- Well-known long-form engineering blogs (e.g., 2ality for JS, Julia Evans for systems).
+
+**Banned sources — do not cite, do not paste their conclusions:**
+
+- CSDN, 博客园 low-quality mirrors, 百度知道 / 百度经验, 360 doc, content-farm aggregators.
+- Auto-translated copies of English posts (often mis-translate the failing API name).
+- AI-generated SEO articles with no author or no date.
+- Personal blogs older than ~3 years for a fast-moving library, unless they are still cited by Tier 1.
+
+The failure mode is consistent: these sources confidently misattribute the cause, you "verify" your hypothesis against them, and you ship a fix for the wrong layer. The YouTube case study (see `references/case-studies/youtube-estimated-quote.md`) is exactly this: only reading the library's actual source revealed `lockupViewModel` — every blog post described the *old* response shape.
+
+**Recording the evidence:**
+
+Every external URL you consulted to confirm a link in the cause chain must be listed in the bug report under "Investigation" or "References". This makes the report auditable and lets future readers re-check whether the source is still valid.
+
+If you cannot find a Tier 1 or Tier 2 source for a claim, **the claim is a guess** — go back to Phase 2 and instrument to prove it locally, instead of borrowing someone else's wrong answer.
+
 ### 3.3 Partial fixes
 
 It's common to fix the proximate cause and discover the bug isn't fully gone. **Don't celebrate prematurely**. The success criterion from Phase 0 is your only gate.
