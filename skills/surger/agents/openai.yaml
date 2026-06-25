@@ -1,0 +1,4 @@
+interface:
+  display_name: "Surger"
+  short_description: "Diagnose and operate Surge safely"
+  default_prompt: "Use $surger to diagnose why my Mac network or Surge proxy is not working."

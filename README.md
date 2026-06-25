@@ -9,6 +9,7 @@ Inspired by [antfu/skills](https://github.com/antfu/skills): each skill lives in
 | Skill | Description |
 |---|---|
 | [`bug-hunt`](./skills/bug-hunt) | Five-phase, evidence-driven root-cause debugging methodology. Enforces multi-layered cause chains, structured log discipline, and a bug-report artifact. |
+| [`surger`](./skills/surger) | Terminal-first Surge for Mac assistant for network diagnosis, proxy/node checks, safe profile edits, reloads, DNS fixes, and enhanced-mode/TUN troubleshooting. |
 
 More skills will land here over time. Each one is independently installable.
 
