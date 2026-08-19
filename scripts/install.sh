@@ -6,7 +6,7 @@
 #   ./install.sh                 # all skills, both tools, user-level
 #   ./install.sh --claude        # Claude Code only
 #   ./install.sh --codex         # Codex only
-#   ./install.sh --only NAME     # install just one skill (e.g. --only bug-hunt)
+#   ./install.sh --only NAME     # install just one skill (e.g. --only pdf-to-epub)
 #   ./install.sh --project DIR   # also install project-level into DIR/.claude and DIR/.agents
 #
 # Re-running is safe: existing symlinks pointing at this repo are kept; broken
