@@ -1,0 +1,7 @@
+interface:
+  display_name: "口播精修与柔和灰底字幕"
+  short_description: "自动精修口播卡顿、重说和空白，保留演示过程，直接交付柔和灰底字幕成片"
+  default_prompt: "使用 $polish-spoken-video 精修这个口播视频，去卡顿、剪空白、加柔和灰底字幕，中途不确认，直接给我成片。"
+
+policy:
+  allow_implicit_invocation: true
