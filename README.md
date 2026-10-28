@@ -12,6 +12,7 @@ Inspired by [antfu/skills](https://github.com/antfu/skills): each skill lives in
 | [`pdf-to-epub`](./skills/pdf-to-epub) | Convert a PDF book to a reflowable EPUB: strip running headers/footers/watermarks, rebuild paragraphs, split chapters from bookmarks or running headers. |
 | [`mygo-intro-animation`](./skills/mygo-intro-animation) | First-run / install intro for myGo macOS apps: the product name hand-written over a breathing aurora, letters morphing into the logo, the logo flying into the main window as it fades in. |
 | [`surger`](./skills/surger) | Terminal-first Surge for Mac assistant for network diagnosis, proxy/node checks, safe profile edits, reloads, DNS fixes, and enhanced-mode/TUN troubleshooting. |
+| [`seo-geo-playbook`](./skills/seo-geo-playbook) | Full-stack Technical SEO & Generative Engine Optimization (GEO) playbook: multi-locale SSR/hreflang, AI crawler `robots.txt`, `/llms.txt`, Schema.org JSON-LD, IndexNow, high-information-gain pages, and a two-tier Googlebot verification gate. |
 
 More skills will land here over time. Each one is independently installable.
 

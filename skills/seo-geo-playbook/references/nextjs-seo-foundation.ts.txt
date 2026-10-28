@@ -1,0 +1,271 @@
+// ============================================================================
+// Reference Implementation: Next.js App Router SEO & GEO Foundation
+// Proven in Lumi (apps/web). Copy, rename SITE_ORIGIN / BRAND_NAME / slugs,
+// and adapt to your project's i18n and domain constants.
+// ============================================================================
+
+// ----------------------------------------------------------------------------
+// 1. app/_lib/seo.ts — Route manifest, canonical URLs, hreflang & Metadata
+// ----------------------------------------------------------------------------
+import type { Metadata } from "next";
+import { routing } from "../../i18n/routing";
+
+export const SITE_ORIGIN = "https://example.com";
+export const BRAND_NAME = "BrandName";
+export const INDEXNOW_KEY = "4f8b9c2e1a7d6e3f5b0c8a9d2e4f6a1b"; // 32-hex key
+export const INDEXNOW_KEY_LOCATION = `${SITE_ORIGIN}/${INDEXNOW_KEY}.txt`;
+
+export const featureSlugs = [
+  "feature-one",
+  "feature-two",
+] as const;
+export type FeatureSlug = (typeof featureSlugs)[number];
+
+export const exploreSlugs = [
+  "case-study-one",
+] as const;
+export type ExploreSlug = (typeof exploreSlugs)[number];
+
+export const publicPaths = [
+  "/",
+  "/pricing",
+  "/download",
+  "/docs",
+  "/support",
+  "/privacy",
+  "/terms",
+  ...featureSlugs.map((slug) => `/features/${slug}`),
+  "/compare/category-comparison",
+  "/explore",
+  ...exploreSlugs.map((slug) => `/explore/${slug}`),
+];
+
+export const contentUpdatedAt = "2026-10-21";
+
+export const pageUrl = (locale: string, pathname: string) =>
+  `${SITE_ORIGIN}/${locale}${pathname === "/" ? "" : pathname}`;
+
+export const languageAlternates = (pathname: string) =>
+  Object.fromEntries([
+    ...routing.locales.map((locale) => [locale, pageUrl(locale, pathname)]),
+    ["x-default", pageUrl("en", pathname)],
+  ]);
+
+const OG_LOCALE_MAP: Record<string, string> = {
+  "zh-CN": "zh_CN",
+  "zh-TW": "zh_TW",
+  en: "en_US",
+  ja: "ja_JP",
+  ko: "ko_KR",
+};
+
+export function buildPageMetadata({
+  locale,
+  pathname,
+  title,
+  description,
+  ogTitle = title,
+  ogDescription = description,
+  noIndex = false,
+}: {
+  locale: string;
+  pathname: string;
+  title: string;
+  description: string;
+  ogTitle?: string;
+  ogDescription?: string;
+  noIndex?: boolean;
+}): Metadata {
+  const url = pageUrl(locale, pathname);
+  const brandRegex = new RegExp(`\\b${BRAND_NAME}\\b`, "i");
+  const images = [
+    {
+      url: "/brand/og-default.png",
+      width: 1200,
+      height: 630,
+      alt: BRAND_NAME,
+    },
+  ];
+  return {
+    metadataBase: new URL(SITE_ORIGIN),
+    title: { absolute: brandRegex.test(title) ? title : `${title} · ${BRAND_NAME}` },
+    description,
+    alternates: noIndex ? undefined : { canonical: url, languages: languageAlternates(pathname) },
+    robots: noIndex ? { index: false, follow: false } : { index: true, follow: true },
+    openGraph: {
+      title: ogTitle,
+      description: ogDescription,
+      url,
+      siteName: BRAND_NAME,
+      type: "website",
+      locale: OG_LOCALE_MAP[locale],
+      images,
+    },
+    twitter: { card: "summary_large_image", title: ogTitle, description: ogDescription, images },
+  };
+}
+
+// ----------------------------------------------------------------------------
+// 2. app/robots.ts — Explicit AI crawlers + per-bot private route disallow
+// ----------------------------------------------------------------------------
+import type { MetadataRoute } from "next";
+
+export default function robots(): MetadataRoute.Robots {
+  const privatePrefixes = [
+    "workspace",
+    "login",
+    "extension/",
+    "account",
+    "library",
+    "redeem",
+    "admin",
+    "dashboard",
+  ];
+  const disallow = [
+    "/api/",
+    ...privatePrefixes.flatMap((path) => [`/*/${path}`, `/${path}`]),
+  ];
+  const bots = [
+    "*",
+    "OAI-SearchBot",
+    "ChatGPT-User",
+    "PerplexityBot",
+    "ClaudeBot",
+    "Claude-Web",
+    "Google-Extended",
+    "Applebot-Extended",
+    "Bytespider",
+    "YouBot",
+  ];
+  return {
+    rules: bots.map((userAgent) => ({ userAgent, allow: "/", disallow })),
+    sitemap: `${SITE_ORIGIN}/sitemap.xml`,
+  };
+}
+
+// ----------------------------------------------------------------------------
+// 3. app/sitemap.ts — Multi-locale sitemap with xhtml:link alternates
+// ----------------------------------------------------------------------------
+export function sitemap(): MetadataRoute.Sitemap {
+  return publicPaths.flatMap((pathname) =>
+    routing.locales.map((locale) => ({
+      url: pageUrl(locale, pathname),
+      lastModified: ["/privacy", "/terms"].includes(pathname) ? "2026-10-26" : contentUpdatedAt,
+      changeFrequency: "monthly" as const,
+      priority:
+        pathname === "/"
+          ? 1
+          : ["/privacy", "/terms"].includes(pathname)
+            ? 0.4
+            : pathname.startsWith("/features") || ["/pricing", "/download"].includes(pathname)
+              ? 0.9
+              : 0.8,
+      alternates: { languages: languageAlternates(pathname) },
+    })),
+  );
+}
+
+// ----------------------------------------------------------------------------
+// 4. app/_lib/structured-data.ts & app/_components/json-ld.tsx
+// ----------------------------------------------------------------------------
+export const serializeJsonLd = (data: unknown) => JSON.stringify(data).replace(/</g, "\\u003c");
+
+export type FaqItem = { q: string; a: string };
+
+export function JsonLd({ data }: { data: unknown }) {
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: serializeJsonLd(data) }}
+    />
+  );
+}
+
+export function FaqJsonLd({ items }: { items: readonly FaqItem[] }) {
+  return (
+    <JsonLd
+      data={{
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        mainEntity: items.map((item) => ({
+          "@type": "Question",
+          name: item.q,
+          acceptedAnswer: { "@type": "Answer", text: item.a },
+        })),
+      }}
+    />
+  );
+}
+
+// ----------------------------------------------------------------------------
+// 5. app/_components/seo-table.tsx — Semantic, accessible specification table
+// ----------------------------------------------------------------------------
+import type { ReactNode } from "react";
+
+export function SeoTable({
+  caption,
+  headers,
+  rows,
+}: {
+  caption: string;
+  headers: readonly string[];
+  rows: readonly (readonly ReactNode[])[];
+}) {
+  return (
+    <div
+      className="my-8 overflow-x-auto rounded-lg border border-line bg-page"
+      tabIndex={0}
+      role="region"
+      aria-label={caption}
+    >
+      <table className="w-full min-w-[560px] border-collapse text-left text-[15px] leading-relaxed">
+        <caption className="p-5 text-left font-medium text-fg">{caption}</caption>
+        <thead className="border-y border-line bg-subtle">
+          <tr>
+            {headers.map((h) => (
+              <th key={h} scope="col" className="px-5 py-4 font-semibold">
+                {h}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, i) => (
+            <tr key={i} className="border-b last:border-0">
+              {row.map((cell, j) =>
+                j === 0 ? (
+                  <th key={j} scope="row" className="px-5 py-4 align-top font-medium">
+                    {cell}
+                  </th>
+                ) : (
+                  <td key={j} className="px-5 py-4 align-top">
+                    {cell}
+                  </td>
+                ),
+              )}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// ----------------------------------------------------------------------------
+// 6. scripts/submit-indexnow.ts — Instant push to Bing / ChatGPT / Perplexity
+// ----------------------------------------------------------------------------
+export function buildIndexNowPayload() {
+  const host = new URL(SITE_ORIGIN).host;
+  const sitemapUrls = sitemap().map((entry) => entry.url);
+  const urlList = [
+    ...sitemapUrls,
+    `${SITE_ORIGIN}/llms.txt`,
+    `${SITE_ORIGIN}/llms-full.txt`,
+  ];
+  return {
+    host,
+    key: INDEXNOW_KEY,
+    keyLocation: INDEXNOW_KEY_LOCATION,
+    urlList,
+  };
+}

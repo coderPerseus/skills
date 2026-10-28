@@ -1,0 +1,179 @@
+// ============================================================================
+// Reference Verification Suite: Two-Tier SEO & GEO Automated Gates
+// 1. tests/seo.test.ts — Fast unit contract checks (node --test / tsx --test)
+// 2. tests/seo-ssr.ts  — Live HTTP Googlebot non-JS crawler verification
+// ============================================================================
+
+// ----------------------------------------------------------------------------
+// Part 1: tests/seo.test.ts
+// ----------------------------------------------------------------------------
+import assert from "node:assert/strict";
+import { test } from "node:test";
+import { serializeJsonLd } from "../app/_lib/structured-data";
+import {
+  buildPageMetadata,
+  languageAlternates,
+  pageUrl,
+  publicPaths,
+} from "../app/_lib/seo";
+import sitemap from "../app/sitemap";
+import robots from "../app/robots";
+import { routing } from "../i18n/routing";
+
+test("canonical URLs and reciprocal language matrix cover the route manifest", () => {
+  for (const path of publicPaths)
+    for (const locale of routing.locales) {
+      const m = buildPageMetadata({
+        locale,
+        pathname: path,
+        title: "Page",
+        description: "Description",
+      });
+      assert.equal(m.alternates?.canonical, pageUrl(locale, path));
+      assert.deepEqual(m.alternates?.languages, languageAlternates(path));
+      assert.equal(
+        Object.keys(m.alternates?.languages ?? {}).length,
+        routing.locales.length + 1,
+      );
+      assert.equal(m.alternates?.languages?.["x-default"], pageUrl("en", path));
+    }
+  const entries = sitemap();
+  const expectedCount = publicPaths.length * routing.locales.length;
+  assert.equal(entries.length, expectedCount);
+  assert.equal(new Set(entries.map((e) => e.url)).size, expectedCount);
+});
+
+test("private pages have noindex and no public language alternates", () => {
+  for (const path of ["/workspace", "/login", "/redeem", "/account", "/library"]) {
+    const m = buildPageMetadata({
+      locale: "en",
+      pathname: path,
+      title: "Private",
+      description: "Private",
+      noIndex: true,
+    });
+    assert.deepEqual(m.robots, { index: false, follow: false });
+    assert.equal(m.alternates, undefined);
+    assert(!publicPaths.includes(path));
+  }
+});
+
+test("all bot groups exclude private paths, not only the wildcard", () => {
+  const rules = robots().rules;
+  assert(Array.isArray(rules));
+  for (const rule of rules) {
+    assert.equal(rule.allow, "/");
+    assert(Array.isArray(rule.disallow));
+    assert(rule.disallow.includes("/api/"));
+    assert(rule.disallow.includes("/*/workspace"));
+  }
+});
+
+test("JSON-LD cannot break out of its script element and retains visible FAQ text", () => {
+  const data = {
+    q: "What does <tag> mean?",
+    a: '</script><script>alert(1)</script> & quotation "',
+  };
+  const encoded = serializeJsonLd(data);
+  assert(!encoded.includes("<"));
+  assert.deepEqual(JSON.parse(encoded), data);
+});
+
+// ----------------------------------------------------------------------------
+// Part 2: tests/seo-ssr.ts — Live HTTP Googlebot SSR Verification
+// Run against dev or production server: SEO_TEST_ORIGIN=http://localhost:3000 tsx tests/seo-ssr.ts
+// ----------------------------------------------------------------------------
+const origin = process.env.SEO_TEST_ORIGIN ?? "http://localhost:3000";
+const failures: string[] = [];
+let passed = 0;
+
+const decode = (s: string) =>
+  s
+    .replaceAll("&amp;", "&")
+    .replaceAll("&quot;", '"')
+    .replaceAll("&#x27;", "'")
+    .replaceAll("&lt;", "<")
+    .replaceAll("&gt;", ">");
+
+const attributes = (tag: string) =>
+  Object.fromEntries([...tag.matchAll(/([\w:-]+)="([^"]*)"/g)].map((m) => [m[1]!, decode(m[2]!)]));
+
+async function check(label: string, run: () => Promise<void>) {
+  try {
+    await run();
+    passed++;
+  } catch (e) {
+    failures.push(`${label}: ${e instanceof Error ? e.message : String(e)}`);
+  }
+}
+
+async function get(path: string) {
+  const res = await fetch(origin + path, {
+    headers: { "Accept-Language": "en-US", "User-Agent": "Googlebot" },
+    redirect: "manual",
+  });
+  return { res, html: await res.text() };
+}
+
+export async function runSsrSuite() {
+  for (const locale of routing.locales) {
+    const titles = new Set<string>();
+    const descriptions = new Set<string>();
+    for (const path of publicPaths) {
+      await check(`${locale}${path}`, async () => {
+        const { res, html } = await get(`/${locale}${path === "/" ? "" : path}`);
+        assert.equal(res.status, 200);
+        assert.match(html, new RegExp(`<html[^>]*lang="${locale}"`));
+        const head = html.split("</head>")[0]!;
+        const title = [...head.matchAll(/<title>(.*?)<\/title>/gs)];
+        assert.equal(title.length, 1);
+        assert(!titles.has(title[0]![1]!));
+        titles.add(title[0]![1]!);
+
+        const meta = [...head.matchAll(/<meta\s[^>]+>/g)].map((v) => attributes(v[0]));
+        const desc = meta.filter((v) => v.name === "description");
+        assert.equal(desc.length, 1);
+        assert(desc[0]!.content);
+        assert(!descriptions.has(desc[0]!.content!));
+        descriptions.add(desc[0]!.content!);
+
+        const links = [...head.matchAll(/<link\s[^>]+>/g)].map((v) => attributes(v[0]));
+        assert.equal(links.filter((v) => v.rel === "canonical").length, 1);
+        assert(links.some((v) => v.rel === "canonical" && v.href === pageUrl(locale, path)));
+
+        const alternates = links.filter((v) => v.rel === "alternate");
+        assert.equal(alternates.length, routing.locales.length + 1);
+
+        const scripts = [
+          ...html.matchAll(/<script type="application\/ld\+json">(.*?)<\/script>/gs),
+        ].map((v) => JSON.parse(v[1]!));
+        const visible = decode(
+          html
+            .replace(/<script\b[^>]*>[\s\S]*?<\/script>/g, "")
+            .replace(/<style\b[^>]*>[\s\S]*?<\/style>/g, "")
+            .replace(/<[^>]+>/g, ""),
+        );
+        assert.match(html, /<h1[ >]/);
+        assert.match(html, /<h2[ >]/);
+        for (const schema of scripts) {
+          if (schema["@type"] === "FAQPage") {
+            for (const item of schema.mainEntity) {
+              assert(visible.includes(item.name));
+              assert(visible.includes(item.acceptedAnswer.text));
+            }
+          }
+        }
+        if (path === "/") {
+          for (const publicPath of publicPaths.filter((p) => p !== "/")) {
+            assert(
+              html.includes(`href="/${locale}${publicPath}"`),
+              `missing homepage link (click depth > 1): ${publicPath}`,
+            );
+          }
+        }
+      });
+    }
+  }
+  console.log(JSON.stringify({ passed, failed: failures.length, failures }, null, 2));
+  if (failures.length) process.exitCode = 1;
+}
