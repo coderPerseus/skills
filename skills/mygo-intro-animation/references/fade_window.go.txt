@@ -1,0 +1,18 @@
+// fadeIn fades win from transparent to opaque over d, for projects without a native bridge
+// (popMind uses NSWindow.animator.alphaValue through its native library instead).
+// Show the window with SetOpacity(0) first, while nothing moves, then call fadeIn when the logo flies.
+func fadeIn(win *mygo.Window, d time.Duration) {
+	go func() {
+		start := time.Now()
+		for {
+			t := float64(time.Since(start)) / float64(d)
+			if t >= 1 {
+				win.SetOpacity(1)
+				return
+			}
+			u := 1 - t
+			win.SetOpacity(1 - u*u*u) // ease out
+			time.Sleep(16 * time.Millisecond)
+		}
+	}()
+}

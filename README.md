@@ -10,6 +10,7 @@ Inspired by [antfu/skills](https://github.com/antfu/skills): each skill lives in
 |---|---|
 | [`bug-hunt`](./skills/bug-hunt) | Five-phase, evidence-driven root-cause debugging methodology. Enforces multi-layered cause chains, structured log discipline, and a bug-report artifact. |
 | [`pdf-to-epub`](./skills/pdf-to-epub) | Convert a PDF book to a reflowable EPUB: strip running headers/footers/watermarks, rebuild paragraphs, split chapters from bookmarks or running headers. |
+| [`mygo-intro-animation`](./skills/mygo-intro-animation) | First-run / install intro for myGo macOS apps: the product name hand-written over a breathing aurora, letters morphing into the logo, the logo flying into the main window as it fades in. |
 | [`surger`](./skills/surger) | Terminal-first Surge for Mac assistant for network diagnosis, proxy/node checks, safe profile edits, reloads, DNS fixes, and enhanced-mode/TUN troubleshooting. |
 
 More skills will land here over time. Each one is independently installable.
